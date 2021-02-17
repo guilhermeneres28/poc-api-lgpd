@@ -1,5 +1,5 @@
 version: "3.7"
-  services:
+services:
   database_service_user:
     container_name: database_service_lgpd
     image: postgres:12.4

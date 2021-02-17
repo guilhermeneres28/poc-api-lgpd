@@ -21,4 +21,8 @@ public class CustomerRequest {
 
     @NotNull
     private Gender gender;
+
+    @NotNull
+    @NotBlank
+    private String email;
 }
