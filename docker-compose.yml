@@ -1,0 +1,10 @@
+version: "3.7"
+  services:
+  database_service_user:
+    container_name: database_service_lgpd
+    image: postgres:12.4
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
