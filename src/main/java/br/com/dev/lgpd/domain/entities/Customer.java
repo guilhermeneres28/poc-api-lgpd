@@ -1,10 +1,8 @@
 package br.com.dev.lgpd.domain.entities;
 
 import br.com.dev.lgpd.domain.enums.Gender;
-import br.com.dev.lgpd.services.CryptographyService;
 import br.com.dev.lgpd.services.requests.CustomerRequest;
 import lombok.Getter;
-import lombok.Setter;
 
 import javax.crypto.SecretKey;
 import javax.persistence.Entity;
@@ -15,7 +13,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import java.time.LocalDateTime;
 
-@Getter @Setter
+import static br.com.dev.lgpd.services.CryptographyService.encrypt;
+import static java.lang.Boolean.FALSE;
+
+@Getter
 @Entity(name = "TB_CUSTOMER")
 public class Customer {
 
@@ -38,7 +39,7 @@ public class Customer {
     }
 
     private Customer(Gender gender, String name, Integer age, Boolean isSubscribed, String email) {
-        this.gender = (Gender) gender;
+        this.gender = gender;
         this.name = name;
         this.age = age;
         this.isSubscribed = isSubscribed;
@@ -51,10 +52,12 @@ public class Customer {
                 customerRequest.getAge(), customerRequest.getIsSubscribed(), customerRequest.getEmail());
     }
 
-    public void softDeleteCustomer(SecretKey secretKey) {
-        this.name = CryptographyService.encrypt(name, secretKey);
-        this.email = CryptographyService.encrypt(email, secretKey);
-        this.updatedAt = LocalDateTime.now();
-        this.deletedAt = LocalDateTime.now();
+    public LocalDateTime softDeleteCustomer(SecretKey secretKey) {
+        LocalDateTime deletedDate = LocalDateTime.now();
+        this.name = encrypt(name, secretKey);
+        this.email = encrypt(email, secretKey);
+        this.deletedAt = deletedDate;
+        this.isSubscribed = FALSE;
+        return deletedDate;
     }
 }

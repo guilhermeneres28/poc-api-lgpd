@@ -6,6 +6,7 @@ import br.com.dev.lgpd.repositories.CustomerRespository;
 import br.com.dev.lgpd.repositories.SecretCustomerKeyRepository;
 import br.com.dev.lgpd.services.exceptions.CryptographyServiceException;
 import br.com.dev.lgpd.services.requests.CustomerRequest;
+import br.com.dev.lgpd.services.responses.CustomerDeleteResponse;
 import br.com.dev.lgpd.services.responses.CustomerResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +14,11 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import javax.transaction.Transactional;
-import java.util.Base64;
+import java.time.LocalDateTime;
 import java.util.Optional;
+
+import static br.com.dev.lgpd.services.CryptographyService.convertSecretKey;
+import static br.com.dev.lgpd.services.CryptographyService.generateSecretKey;
 
 @Service
 @AllArgsConstructor(onConstructor_={@Autowired})
@@ -31,23 +35,33 @@ public class CustomerService {
     }
 
     @Transactional
-    public void delete(Long id) throws CryptographyServiceException {
+    public CustomerDeleteResponse delete(Long id) throws CryptographyServiceException {
         Customer customer = findCustomerById(id);
 
-        SecretKey secretKey = CryptographyService.generateKey();
+        SecretKey secretKey = generateSecretKey();
 
-        customer.softDeleteCustomer(secretKey);
+        LocalDateTime deletedAt = customer.softDeleteCustomer(secretKey);
 
         saveSecretCustomerKey(customer, secretKey);
+
+        return createCustomerDeleteResponse(deletedAt);
     }
 
     private void saveSecretCustomerKey(Customer customer, SecretKey secretKey) {
-        String secretKeyText = Base64.getEncoder().encodeToString(secretKey.getEncoded());
+        String secretKeyText = convertSecretKey(secretKey);
         SecretCustomerKey secretCustomerKey = SecretCustomerKey.create(customer.getId(), secretKeyText);
         secretKeyCustomerRepository.save(secretCustomerKey);
     }
 
-    private Customer findCustomerById(Long id) {
+    public Customer findByEmail(String email) {
+        Optional<Customer> possibleCustomer = customerRespository.findByEmail(email);
+        if(possibleCustomer.isEmpty()) {
+            throw new RuntimeException("Could not find customer");
+        }
+        return possibleCustomer.get();
+    }
+
+    public Customer findCustomerById(Long id) {
         Optional<Customer> possibleCustomer = customerRespository.findById(id);
         if(possibleCustomer.isEmpty()) {
             throw new RuntimeException("Could not find customer");
@@ -55,10 +69,14 @@ public class CustomerService {
         return possibleCustomer.get();
     }
 
-    public CustomerResponse createCustomerResponse(Customer customer){
+    private CustomerResponse createCustomerResponse(Customer customer){
         return CustomerResponse.builder()
                 .email(customer.getEmail())
-                .name(customer.getEmail())
+                .name(customer.getName())
                 .build();
+    }
+
+    public CustomerDeleteResponse createCustomerDeleteResponse(LocalDateTime deleteAt) {
+        return new CustomerDeleteResponse(deleteAt);
     }
 }

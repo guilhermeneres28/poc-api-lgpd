@@ -52,7 +52,7 @@ public class CryptographyService {
         return new String(plainText);
     }
 
-    public static SecretKey generateKey() throws CryptographyServiceException {
+    public static SecretKey generateSecretKey() throws CryptographyServiceException {
         int secretKeySize = 256;
         try {
             KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
@@ -69,5 +69,10 @@ public class CryptographyService {
 
         new SecureRandom().nextBytes(initializationVector);
         return new IvParameterSpec(initializationVector);
+    }
+
+
+    public static String convertSecretKey(SecretKey secretKey) {
+        return Base64.getEncoder().encodeToString(secretKey.getEncoded());
     }
 }
