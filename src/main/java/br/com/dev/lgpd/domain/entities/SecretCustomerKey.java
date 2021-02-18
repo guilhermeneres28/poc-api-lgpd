@@ -1,5 +1,7 @@
 package br.com.dev.lgpd.domain.entities;
 
+import lombok.Getter;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -7,6 +9,7 @@ import javax.persistence.Id;
 import java.time.LocalDateTime;
 
 @Entity
+@Getter
 public class SecretCustomerKey {
 
     @Id

@@ -4,6 +4,7 @@ import br.com.dev.lgpd.domain.entities.Customer;
 import br.com.dev.lgpd.domain.entities.SecretCustomerKey;
 import br.com.dev.lgpd.repositories.CustomerRespository;
 import br.com.dev.lgpd.repositories.SecretCustomerKeyRepository;
+import br.com.dev.lgpd.repositories.SecretManagerRepository;
 import br.com.dev.lgpd.services.exceptions.CryptographyServiceException;
 import br.com.dev.lgpd.services.requests.CustomerRequest;
 import br.com.dev.lgpd.services.responses.CustomerDeleteResponse;
@@ -44,7 +45,8 @@ public class CustomerService {
 
         saveSecretCustomerKey(customer, secretKey);
 
-        return createCustomerDeleteResponse(deletedAt);
+        String awsRn = SecretManagerRepository.save(convertSecretKey(secretKey), customer.getId());
+        return createCustomerDeleteResponse(deletedAt, awsRn);
     }
 
     private void saveSecretCustomerKey(Customer customer, SecretKey secretKey) {
@@ -76,7 +78,7 @@ public class CustomerService {
                 .build();
     }
 
-    public CustomerDeleteResponse createCustomerDeleteResponse(LocalDateTime deleteAt) {
-        return new CustomerDeleteResponse(deleteAt);
+    public CustomerDeleteResponse createCustomerDeleteResponse(LocalDateTime deleteAt, String awsRn) {
+        return new CustomerDeleteResponse(deleteAt, awsRn);
     }
 }
