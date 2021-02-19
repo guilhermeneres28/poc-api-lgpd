@@ -18,7 +18,7 @@ import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static br.com.dev.lgpd.services.CryptographyService.convertSecretKey;
+import static br.com.dev.lgpd.services.CryptographyService.convertSecretKeyToBase64;
 import static br.com.dev.lgpd.services.CryptographyService.generateSecretKey;
 
 @Service
@@ -45,12 +45,20 @@ public class CustomerService {
 
         saveSecretCustomerKey(customer, secretKey);
 
-        String awsRn = SecretManagerRepository.save(convertSecretKey(secretKey), customer.getId());
+        String awsRn = SecretManagerRepository.save(convertSecretKeyToBase64(secretKey), customer.getId());
         return createCustomerDeleteResponse(deletedAt, awsRn);
     }
 
+    /*
+        TODO: Impl Restrict Access to this operation
+     */
+    public Customer getCustomerDescryptSensitiveData(Long id, String secretkey) {
+        Customer customer = findCustomerById(id);
+        return customer.createCustomerWithDecryptSensitveData(secretkey);
+    }
+
     private void saveSecretCustomerKey(Customer customer, SecretKey secretKey) {
-        String secretKeyText = convertSecretKey(secretKey);
+        String secretKeyText = convertSecretKeyToBase64(secretKey);
         SecretCustomerKey secretCustomerKey = SecretCustomerKey.create(customer.getId(), secretKeyText);
         secretKeyCustomerRepository.save(secretCustomerKey);
     }

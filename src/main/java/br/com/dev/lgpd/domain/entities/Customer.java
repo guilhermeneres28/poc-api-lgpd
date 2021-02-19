@@ -13,7 +13,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import java.time.LocalDateTime;
 
-import static br.com.dev.lgpd.services.CryptographyService.encrypt;
+import static br.com.dev.lgpd.services.CryptographyService.*;
 import static java.lang.Boolean.FALSE;
 
 @Getter
@@ -59,5 +59,10 @@ public class Customer {
         this.deletedAt = deletedDate;
         this.isSubscribed = FALSE;
         return deletedDate;
+    }
+
+    public Customer createCustomerWithDecryptSensitveData(String secretkey) {
+        return new Customer(gender, decrypt(name, secretkey),
+                age, isSubscribed, decrypt(email, secretkey));
     }
 }

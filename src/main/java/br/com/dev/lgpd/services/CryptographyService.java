@@ -10,6 +10,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -19,18 +20,30 @@ import java.util.Base64;
 @Slf4j
 public class CryptographyService {
 
-    public static String encrypt(String input, SecretKey key) {
+    public static String encrypt(String input, SecretKey secretKey) {
 
+        // Generate Iv
         IvParameterSpec initializationVector = generateInitializationVector();
 
         Cipher cipher;
         try {
+            // Get Algorithm Instance
             cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, key, initializationVector);
 
+            // Init cipher.
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, initializationVector);
+
+            // Encrypt input text
             byte[] cipherText = cipher.doFinal(input.getBytes());
 
-            return Base64.getEncoder().encodeToString(cipherText);
+            // Generate Iv Base64
+            String ivAsString = Base64.getEncoder().encodeToString(initializationVector.getIV());
+
+            // Generate cipher text base64
+            String cipherTextAsStrig = Base64.getEncoder().encodeToString(cipherText);
+
+            return ivAsString.concat(":").concat(cipherTextAsStrig);
+
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException
                 | InvalidAlgorithmParameterException | IllegalBlockSizeException
                 | BadPaddingException exception) {
@@ -39,17 +52,29 @@ public class CryptographyService {
         return null;
     }
 
-    public static String decrypt(String cipherText, SecretKey key) throws NoSuchPaddingException, NoSuchAlgorithmException,
-            InvalidAlgorithmParameterException, InvalidKeyException,
-            BadPaddingException, IllegalBlockSizeException {
+    public static String decrypt(String cipherText, String secretKey) {
+        Cipher cipher;
+        try {
+            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 
-        IvParameterSpec initializationVector = generateInitializationVector();
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            String[] cipherParts = cipherText.split(":");
 
-        cipher.init(Cipher.DECRYPT_MODE, key, initializationVector);
-        byte[] plainText = cipher.doFinal(Base64.getDecoder().decode(cipherText));
+            IvParameterSpec initializationVector = new IvParameterSpec(Base64.getDecoder().decode(cipherParts[0]));
+            byte[] secretKeyByte = Base64.getDecoder().decode(secretKey.getBytes());
 
-        return new String(plainText);
+            // Generate SecretKeySpec
+            SecretKeySpec secretKeySpec = new SecretKeySpec(secretKeyByte, 0, secretKeyByte.length,  "AES");
+
+            cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, initializationVector);
+
+            byte[] plainText = cipher.doFinal(Base64.getDecoder().decode(cipherParts[1]));
+
+            return new String(plainText);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException
+                | IllegalBlockSizeException | InvalidKeyException | BadPaddingException exception) {
+            exception.printStackTrace();
+        }
+        return null;
     }
 
     public static SecretKey generateSecretKey() throws CryptographyServiceException {
@@ -71,8 +96,7 @@ public class CryptographyService {
         return new IvParameterSpec(initializationVector);
     }
 
-
-    public static String convertSecretKey(SecretKey secretKey) {
+    public static String convertSecretKeyToBase64(SecretKey secretKey) {
         return Base64.getEncoder().encodeToString(secretKey.getEncoded());
     }
 }
